@@ -1,6 +1,6 @@
 export default class {
   constructor(){
-    console.log("test constructed albeit i didnt ask");
+    console.log("test constructed");
   }
   output(){
     return "Hello mate";
