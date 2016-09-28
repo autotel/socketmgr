@@ -1,20 +1,11 @@
-//client-side index.js
-// var socketController=require('./socketController').default;
-// socketController=new socketController();
-// console.log("loading");
-// console.log(socketController.init());
-//
-// dom.innerHTML='<div>'+test.output()+'</div>';
+function updateStats(memuse) {
+  document.getElementById('rss').innerHTML = memuse.rss;
+  document.getElementById('heapTotal').innerHTML = memuse.heapTotal;
+  document.getElementById('heapUsed').innerHTML = memuse.heapUsed;
 
-var WebSocket = require('ws');
-var ws = new WebSocket('localhost:3000');
-
-ws.on('open', function open() {
-  ws.send('something');
-});
-
-ws.on('message', function(data, flags) {
-  // flags.binary will be set if a binary data is received.
-  // flags.masked will be set if the data was masked.
-});
-
+}
+var host = window.document.location.host.replace(/:.*/, '');
+var ws = new WebSocket('ws://' + host + ':8080');
+ws.onmessage = function (event) {
+  updateStats(JSON.parse(event.data));
+};

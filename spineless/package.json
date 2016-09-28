@@ -1,0 +1,18 @@
+{
+  "author": "",
+  "name": "serverstats",
+  "readme": "ws example copied in other context to learn what is needed",
+  "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/einaros/ws.git"
+  },
+  "engines": {
+    "node": ">0.4.0"
+  },
+  "dependencies": {
+    "express": "~3.0.0"
+  },
+  "devDependencies": {},
+  "optionalDependencies": {}
+}

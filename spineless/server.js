@@ -2,12 +2,12 @@ var WebSocketServer = require('ws').Server
   , http = require('http')
   , express = require('express')
   , app = express();
-//++console.log(__dirname);
-//question: is this the best way to go here? with respect to file relative paths
 
-app.use(express.static('public'));
+app.use(express.static(__dirname + '/public'));
+
 var server = http.createServer(app);
 server.listen(8080);
+
 var wss = new WebSocketServer({server: server});
 wss.on('connection', function(ws) {
   var id = setInterval(function() {
@@ -19,4 +19,3 @@ wss.on('connection', function(ws) {
     clearInterval(id);
   });
 });
-

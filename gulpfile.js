@@ -14,6 +14,7 @@ var nodemon = require('gulp-nodemon');
 // add custom browserify options here
 var customOpts = {
   entries: ['./client/index.js'],
+  //question: what is the following line for?
   transform: [babelify.configure({presets: ["es2015"]})],
   debug: true
 };
@@ -39,7 +40,7 @@ function bundle() {
 
 gulp.task('server', ['client'], function (cb) {
   return nodemon({
-      script: './server/index.js',
+      script: './server/server.js',
       watch: './server/'
   });
 });
