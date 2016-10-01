@@ -18,5 +18,17 @@ wss.on('connection', function(ws) {
     console.log('stopping client interval');
     clearInterval(id);
   });
+  ws.on('message',function(a){
+    console.log("han");
+    console.log(JSON.stringify(a));
+    ws.send(a);
+  });
+  /*
+  this is other approach to handle message reception
+  the parameter a will contain event data, which is a lot more of data
+  ws.onmessage=function(a){
+    console.log("han");
+    console.log(a);
+  }
+  */
 });
-
