@@ -18,7 +18,7 @@ export default class ClientWebSocket {
     connection.onmessage = function (event) {
       //question: is it secuer to json.parse server received data?
       try{
-        var data=JSON.parse(event.data)
+        var data=JSON.parse(event.data);
         parent.handle("message",data);
       }
       catch(error){
@@ -27,7 +27,7 @@ export default class ClientWebSocket {
     };
     connection.onopen = function (event) {
       parent.handle("connectionOpened",event);
-      parent.emit("test");
+      //parent.emit("test");
     };
   }
   emit(payload,then){

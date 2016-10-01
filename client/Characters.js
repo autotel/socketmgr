@@ -1,20 +1,36 @@
 // question: this line is repeated in ClientWebSocket. Should it be a global instead?
 var a = require('./OnHandlers');
+//an array of the displayable characters for client side reference
 var characterList = [];
+//an array of the associations between server id's and client side id's
+var characterAssoc={};
+//functions to access characters:
+//iterate all with callback
 exports.each = function(callback) {
   for (var characterIndex in characterList) {
     var characterInstance = characterList[characterIndex];
     callback(characterInstance, characterIndex);
   }
 }
+//get a character using a clientId
+exports.remote=function(clientId){
+  return characterAssoc[clientId+""];
+}
+//the raw list of characters
 exports.list = characterList;
+//construction function
 exports.Character = function(properties) {
   var parent = this;
-  var properties = properties | {};
+  var properties = properties || {};
+  console.log("c",properties);
   characterList.push(this);
-
+  if(properties.hasOwnProperty("clientId")){
+    console.log("new character",properties);
+    characterAssoc[properties.clientId+""]=this;
+  }else{
+    console.warn("you created a character without providing server clientId. This renders the character unreachable");
+  }
   a.onHandlers.call(this);
-
   this.properties = {
     color: properties.color || "transparent",
     position: properties.position || {
@@ -29,12 +45,9 @@ exports.Character = function(properties) {
   this.dom = myDom;
   myDom.style.cssText = 'position:absolute;width:' + props.width + 'px;height:' + props.height + 'px;opacity:1;z-index:100;background:' + props.color + ';';
   myDom.innerHTML = '<img src="fly1.png" style="width:100%; height:100%;"/>';
-  document.addEventListener('DOMContentLoaded', function() {
+  //document.addEventListener('DOMContentLoaded', function() {
     document.body.appendChild(myDom);
-  }, false);
-
-
-
+  //}, false);
   myDom.addEventListener("mousedown", function(e) {
     e.preventDefault()
     parent.mousePressed = true;
@@ -78,7 +91,6 @@ exports.Character = function(properties) {
   this.transform = {
     position: function(a) {
       transformReturnFunctions.prevCoords = props.position;
-      console.log(a);
       myDom.style.left = (a.x - props.width / 2) + "px";
       myDom.style.top = (a.y - props.height / 2) + "px";
       props.position = a;
@@ -94,4 +106,7 @@ exports.Character = function(properties) {
     }
   }
   this.transform.position(this.properties.position);
+  this.remove=function(){
+    document.body.removeChild(myDom);
+  }
 }
