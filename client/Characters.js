@@ -12,9 +12,9 @@ exports.each = function(callback) {
     callback(characterInstance, characterIndex);
   }
 }
-//get a character using a clientId
-exports.remote=function(clientId){
-  return characterAssoc[clientId+""];
+//get a character using a unique
+exports.remote=function(unique){
+  return characterAssoc[unique+""];
 }
 //the raw list of characters
 exports.list = characterList;
@@ -24,11 +24,11 @@ exports.Character = function(properties) {
   var properties = properties || {};
   console.log("c",properties);
   characterList.push(this);
-  if(properties.hasOwnProperty("clientId")){
+  if(properties.hasOwnProperty("unique")){
     console.log("new character",properties);
-    characterAssoc[properties.clientId+""]=this;
+    characterAssoc[properties.unique+""]=this;
   }else{
-    console.warn("you created a character without providing server clientId. This renders the character unreachable");
+    console.warn("you created a character without providing server unique. This renders the character unreachable");
   }
   a.onHandlers.call(this);
   this.properties = {

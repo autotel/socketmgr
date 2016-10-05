@@ -40,7 +40,7 @@ function bundle() {
 
 gulp.task('server', ['client'], function (cb) {
   return nodemon({
-      script: './server/server.js',
+      script: './server/index.js',
       watch: './server/'
   });
 });

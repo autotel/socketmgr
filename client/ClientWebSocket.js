@@ -11,7 +11,7 @@ export default class ClientWebSocket {
   init (address){
     var parent=this;
     //onHandlers.call(this);
-
+    //pendant:make communication binary
     this.ws = new WebSocket(address);
     //alias only for easier access
     var connection=this.ws;
@@ -30,6 +30,9 @@ export default class ClientWebSocket {
       //parent.emit("test");
     };
   }
+  //pendant: this shoukld make thne work of encomdonf into binary, as shor as possible payloads aswell.
+  //dont use json, too long.
+
   emit(payload,then){
     var connection=this.ws;
     var ret={};
