@@ -34,12 +34,8 @@ adn decompressing the data */
 
 //to get quoted array you can type jsut the chars and process it with the regex
 //[^,\n] -> "$&"
-let charLookup=""+
-  "0123456789abcdef"+
-  "ghijklmnopqrstuv"+
-  "wxyzABCDEFGHIJKL"+
-  "MNOPQRSTUVWXYZ<>"+
-  "?"
+//first header in lookup is misspelled to let know the developer that a message was not well spelled or undefined.
+let charLookup=["misspelled","newid","changeposition","newclient","allstates","remove"];
 //https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
 
 // function ab2str(buf) {
@@ -57,30 +53,42 @@ let charLookup=""+
 
 function decode(bufferArray){
   try{
-    let retArr={
-      header:""
-    };
+    let retArr={};
 
     // let =new ArrayBuffer(20);
 
     let inComing={
-      //bytes 0,1,2,3 will contain message type name
-      header:new Uint8Array(bufferArray,0,4),
+      //bytes 0-3 will contain message type name
+      header:new Uint32Array(bufferArray,0,1),
       //bytes 4-7, quartets 1 will contain object pointer
       pointer:new Uint32Array(bufferArray,4,1),
       //bytes 8-19, quartets 2,3,4 will contain payload
-      data:new Float32Array(bufferArray,8)
+      data:new Uint32Array(bufferArray,8)
     }
-
-    for(let a=0;a<4;a++){
-      retArr.header+=charLookup[inComing.header.buffer[a]];
-    }
-    console.log(retArr.header);
+    retArr.header=charLookup[inComing.header[0]];
+    console.log("header string of header "+inComing.header[0]+" is "+retArr.header);
     // your browser must support for..of loop
     // and let-scoped variables in for loops
     retArr.pointer=inComing.pointer[0];
     // console.log(inComing.pointer[0]);
-    retArr.data=inComing.data;
+    retArr.data={};
+
+    var dataIterator=inComing.data.values();
+    let a=0;
+    for (let letter of dataIterator) {
+      // console.log(letter);
+      retArr.data[a]=letter;
+      a++;
+    }
+    // retArr.data=(inComing.data.slice(8,inComing.data.length));
+    // for(var a =0;a<inComing.data.length;a++){
+    //   retArr.data[a]=inComing.data[a];
+      // for(var b =0;b<inComing.data.buffer.length;b++){
+      //   retArr.data[a+""+b]=inComing.data[a].buffer[b];
+      // }
+    // }
+    // retArr.data=Array.from(inComing.data);
+
 
     // console.log();
     return(retArr);
@@ -90,41 +98,53 @@ function decode(bufferArray){
   }
 }
 export {decode}
-// encode({type:"vector",pointer:32,coords}
-
+// encode({type:"vector",pointer:32,coords
 function encode(data){
+  console.log("encode data"+data);
   try{
     let bufferArray=new ArrayBuffer(20);
     let outGoing={
-      //bytes 0,1,2,3 will contain message type name
-      header:new Uint8Array(bufferArray,0,4),
+      //bytes 0-3 will contain message type name in a representative number
+      header:new Uint32Array(bufferArray,0,1),
       //bytes 4-7, quartets 1 will contain object pointer
       pointer:new Uint32Array(bufferArray,4,1),
       //bytes 8-19, quartets 2,3,4 will contain payload
-      data:new Float32Array(bufferArray,8)
+      data:new Uint32Array(bufferArray,8)
     }
+
     //encode header as four characters
     // data[0]=new Float32Array(str2ab(data[0]));
     // console.log(data[0]);
-    for(let a=0;a<4;a++){
-      let charNum=charLookup.indexOf(data.header[a]);
-      if(charNum==-1)charNum=charLookup.length-1;
-      outGoing.header.buffer[a]=charNum;
-      console.log(outGoing.header.buffer[a]);
+    let typeNum=charLookup.indexOf(data.header);
+    //set wrong message types to "misspelled"
+    if(typeNum==-1)typeNum=0, console.warn(data.header+" is misspelled");
+
+    outGoing.header[0]=typeNum;
+    // console.log(outGoing.header.buffer[0],data);
+    if(data.data){
+      for(let a=0;a<data.data.length;a++){
+        outGoing.data[a]=data.data[a];
+      }
+    }else{
+      console.log("payloadless message",data);
+      for(let a=0;a<outGoing.data.length;a++){
+        outGoing.data[a]=0;
+      }
     }
+
+    //null pointer is forgiven, because client doesn't need to send a pointer of himself,
+    //as the server is aware of the client index upon reception
+    if(!data.pointer>0) data.pointer=0;
     outGoing.pointer[0]=data.pointer;
-    for(let a=0;a<outGoing.data.length;a++){
-      outGoing.data[a]=data.data[a];
-    }
     //encode reference as uint32
-    outGoing.pointer=data.pointer;
+    // outGoing.pointer=data.pointer;
 
     // console.log(data[1].length);
     return bufferArray;
   }
   catch(e){
     console.log("exception while trying to encode the data into the socket.",e);
-    console.log("the expected data looks like this:",{header:"vect",pointer:18,data:[-1,2,-3]});
+    console.log("the data is expected to look like this:",{header:"vect",pointer:18,data:[-1,2,-3]}," but you provided:",data);
     return false;
   }
 }

@@ -16,8 +16,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   wsock.on("message",function(message){
 
-    console.log(message);
-    if(message.header=="chp"){
+    console.log("incoming message",message);
+    if(message.header=="changeposition"){
       // message.no
       let remoteSprite=characters.remote(message.pointer);
       if(remoteSprite){
@@ -36,11 +36,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }else{
         console.warn("couldn't retrieve the corresponding sprite",message);
       }
-    }else if(message.header=="newId"){
+    }else if(message.header=="newid"){
       myClientId=message.data;
       localSprite=new characters.Character({unique:myClientId});
       //console.log("new client Id",message);
-    }else if(message.header=="allStates"){
+    }else if(message.header=="allstates"){
 
       let state=message.data;
       //for each state registry
@@ -54,11 +54,11 @@ document.addEventListener('DOMContentLoaded', function() {
           //if we don't have it, we create it.
           let newCharacter=new characters.Character({position:{x:state[a].x,y:state[a].y},unique:state[a].pointer});
           //if the character id is of my same server id, means that is the localSprite
-          console.log("myClient",myClientId);
+          console.log("myclient",myClientId);
           if(message.pointer==myClientId){ localSprite=newCharacter; }
         }
       }
-    }else if(message.header=="newClient"){
+    }else if(message.header=="newclient"){
       // console.log("new client",message);
       new characters.Character({unique:message.pointer});
     }else{
@@ -67,8 +67,9 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   document.addEventListener("mousemove",function(e){
-    //what is "the way" to error handle?
-    wsock.emit({header:"chp",pointer:myClientId,data:[e.clientX,e.clientY,0]},function(err,pl){
+    console.log("encodedecode",({header:"changeposition",pointer:myClientId,data:[e.clientX,e.clientY,0]}));
+    //question: what is "the way" to error handle?
+    wsock.emit({header:"changeposition",pointer:myClientId,data:[e.clientX,e.clientY,0]},function(err,pl){
       if(err){
         console.log("not sent",err);
       }else{

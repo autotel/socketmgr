@@ -25,7 +25,7 @@ export default class socketServerManager {
       let client = new clientsMan.Client({
         ws: ws
       });
-      console.log("nc",client);
+      // console.log("new client",client);
       //teach this client-identity how he is supposed to send data
       //pendant: make the client.send inside clientsManager, pass ws as paramenter on constructor
       client.send=function(data){
@@ -38,18 +38,28 @@ export default class socketServerManager {
       }
       //send the client Id to the client
       client.send({
-        header: "neid",//new id
-        pointer: client.unique,
-        data:[]
+        header: "newid",
+        pointer: client.unique
       });
       //send the current state of other clients to the client
-      client.send({
-        header: "allStates",
-        data: clientsMan.getAllStates()
+      // client.send({
+      //   header: "allStates",
+      //   data: clientsMan.getAllStates()
+      // });
+      //pendant: this is a slower temporal replacement for allStates emission
+      clientsMan.forEach(function(thisClient){
+        for(let a in thisClient.currentState){
+          client.send({
+            header:[a],
+            pointer:thisClient.unique,
+            data:thisClient.currentState[a].data||[0,0,0]
+          });
+        }
       });
+
       //inform all the other clients about the nuew user
       client.broadcast({
-        header: "newC",//newClient
+        header: "newclient",//newClient
         pointer: client.unique
       });
       //inform whoever is seeing the console about the new client
@@ -57,22 +67,21 @@ export default class socketServerManager {
       //set some handlers to this client's websocket
       ws.on('close', function() {
         client.broadcast({
-          header: "remv",//remove
+          header: "remove",//remove
           pointer: client.unique
         });
-        console.log('stopping client interval');
+        console.log('stopping client'+client.unique);
         clientsMan.removeClient(client);
       });
 
       ws.on('message', function(a) {
         let parsedMessage = interpreter.decode(a);
-        // parsedMessage.unique=client.unique;
+        parsedMessage.pointer=client.unique;
         client.trackChange(parsedMessage);
-        // clientsMan.clientEmitted(client, parsedMessage);
-        client.broadcast(parsedMessage);
-        // ws.send(a);
-        console.log("trackChange",parsedMessage);
-
+        if(parsedMessage.header=="changeposition"){
+          console.log("position",parsedMessage.data);
+          client.broadcast(parsedMessage);
+        }
       });
     });
   }

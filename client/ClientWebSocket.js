@@ -59,6 +59,8 @@ export default class ClientWebSocket {
     let connection=this.ws;
     let ret={};
     let encodedMessage=interpreter.encode(payload);
+    console.log("encodedecode",interpreter.decode(encodedMessage).data);
+
     try{
       connection.send(encodedMessage);
       this.handle("emit",encodedMessage);
