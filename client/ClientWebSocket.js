@@ -1,4 +1,5 @@
-var a=require('./OnHandlers');
+let a=require('./OnHandlers');
+let interpreter=require('../shared/MessageInterpreter');
 export default class ClientWebSocket {
   constructor(address){
     a.onHandlers.call(this);
@@ -9,21 +10,42 @@ export default class ClientWebSocket {
     return this;
   }
   init (address){
-    var parent=this;
+    let parent=this;
     //onHandlers.call(this);
     //pendant:make communication binary
     this.ws = new WebSocket(address);
+
+    this.ws.binaryType='arraybuffer';//i actually would like to communicate by using arraybuffer
+
     //alias only for easier access
-    var connection=this.ws;
+    let connection=this.ws;
     connection.onmessage = function (event) {
+      let parsedMessage=interpreter.decode(event.data);
+      console.log("event data ",parsedMessage);
       //question: is it secuer to json.parse server received data?
-      try{
-        var data=JSON.parse(event.data);
-        parent.handle("message",data);
-      }
-      catch(error){
-        console.log(error,event);
-      }
+      // console.log(interpreter.decode(event.data));
+      // try{
+      //   reader.addEventListener("loadend", function() {
+      //     console.log("reader end ",reader.result);
+      //      // reader.result contains the contents of blob as a typed array
+      //   });
+      //   // reader.readAsArrayBuffer(event.data);
+      //   reader.readAsText(event.data);
+      // }
+      // catch(error){
+      //   console.log("readerError",error);
+      // }
+
+
+      parent.handle("message",parsedMessage);
+
+      // try{
+      //   let data=JSON.parse(event.data);
+      //   parent.handle("message",data);
+      // }
+      // catch(error){
+      //   console.log(error,event);
+      // }
     };
     connection.onopen = function (event) {
       parent.handle("connectionOpened",event);
@@ -34,11 +56,12 @@ export default class ClientWebSocket {
   //dont use json, too long.
 
   emit(payload,then){
-    var connection=this.ws;
-    var ret={};
+    let connection=this.ws;
+    let ret={};
+    let encodedMessage=interpreter.encode(payload);
     try{
-      connection.send(payload); // Send the message 'Ping' to the server
-      this.handle("emit",payload);
+      connection.send(encodedMessage);
+      this.handle("emit",encodedMessage);
       if(then)
       then(null,payload);
     }

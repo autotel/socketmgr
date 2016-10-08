@@ -1,25 +1,25 @@
-var Wsock=require('./ClientWebSocket').default;
-var host = window.document.location.host.replace(/:.*/, '');
-var characters=require('./Characters');
+let Wsock=require('./ClientWebSocket').default;
+let host = window.document.location.host.replace(/:.*/, '');
+let characters=require('./Characters');
 //my own clientId, bint to server
-var myClientId;
+let myClientId;
 //my own sprite instance.
-var localSprite;
+let localSprite;
 console.log(host);
 document.addEventListener('DOMContentLoaded', function() {
   /*
   this is the same..
-  var wsock=new Wsock()
+  let wsock=new Wsock()
   wsock.init('ws://' + host + ':8080');
   ...than this */
-  var wsock=new Wsock('ws://' + host + ':9966');
+  let wsock=new Wsock('ws://' + host + ':9966');
 
   wsock.on("message",function(message){
 
     console.log(message);
-    if(message.type=="chp"){
+    if(message.header=="chp"){
       // message.no
-      var remoteSprite=characters.remote(message.unique);
+      let remoteSprite=characters.remote(message.pointer);
       if(remoteSprite){
         remoteSprite.transform.rotation(remoteSprite.transform.position(message).getMovementDirection()* 180 / Math.PI);
       }else{
@@ -28,47 +28,47 @@ document.addEventListener('DOMContentLoaded', function() {
       // characters.each(function(ch){
       //   ch.transform.rotation(ch.transform.position(message).getMovementDirection()* 180 / Math.PI);
       // });
-    }else if(message.type=="remove"){
+    }else if(message.header=="remove"){
       //pendant:this should be inside
-      var remoteSprite=characters.remote(message.unique);
+      let remoteSprite=characters.remote(message.pointer);
       if(remoteSprite){
         remoteSprite.remove();
       }else{
         console.warn("couldn't retrieve the corresponding sprite",message);
       }
-    }else if(message.type=="newId"){
+    }else if(message.header=="newId"){
       myClientId=message.data;
       localSprite=new characters.Character({unique:myClientId});
       //console.log("new client Id",message);
-    }else if(message.type=="allStates"){
+    }else if(message.header=="allStates"){
 
-      var state=message.data;
+      let state=message.data;
       //for each state registry
-      for(var a in state){
+      for(let a in state){
         //check if we already have a sprite for this remote object
-        var dataOwner=characters.remote(state[a].unique);
+        let dataOwner=characters.remote(state[a].pointer);
         if(dataOwner){
           //if we have it, will apply all the data to it. So far only position
           dataOwner.transform.position(state[a]);
         }else{
           //if we don't have it, we create it.
-          var newCharacter=new characters.Character({position:{x:state[a].x,y:state[a].y},unique:state[a].unique});
+          let newCharacter=new characters.Character({position:{x:state[a].x,y:state[a].y},unique:state[a].pointer});
           //if the character id is of my same server id, means that is the localSprite
           console.log("myClient",myClientId);
-          if(message.unique==myClientId){ localSprite=newCharacter; }
+          if(message.pointer==myClientId){ localSprite=newCharacter; }
         }
       }
-    }else if(message.type=="newClient"){
+    }else if(message.header=="newClient"){
       // console.log("new client",message);
-      new characters.Character({unique:message.unique});
+      new characters.Character({unique:message.pointer});
     }else{
-      console.warn("unexpected message type:",message);
+      console.warn("unexpected message header:",message);
     }
   });
 
   document.addEventListener("mousemove",function(e){
     //what is "the way" to error handle?
-    wsock.emit(JSON.stringify({type:"chp",unique:myClientId,x:e.clientX,y:e.clientY}),function(err,pl){
+    wsock.emit({header:"chp",pointer:myClientId,data:[e.clientX,e.clientY,0]},function(err,pl){
       if(err){
         console.log("not sent",err);
       }else{
