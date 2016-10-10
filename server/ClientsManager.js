@@ -41,7 +41,9 @@ exports.Client=function(append){
   this.unique=nextClientIdSearch();
   //add this element to a ClientsManager global array;
   clients[this.unique]=this;
-
+  this.getIndexInArray=function(){
+    return this.unique;
+  }
   //some functions to this client
   this.broadcast=function(data) {
     console.log("broadcast->");
@@ -76,9 +78,11 @@ exports.Client=function(append){
 
   //keeps the record for current client's state, so each new client gets the older ones.
   this.trackChange=function(data){
-    for(var a in data){
-      this.currentState[a]=data[a];
-    }
+    console.log(data.header+" of "+this.unique+" is "+data.data||false);
+    this.currentState[data.header]=data.data||false;
+    // for(var a in data){
+    //   this.currentState[a]=data[a];
+    // }
     this.timestamp.lastEmit=Date.now();
   }
   // return this;
@@ -97,7 +101,9 @@ exports.clientEmitted=function(uniqueToGet,data){
 }
 exports.forEach=function(callback){
   for(var a in clients){
-    callback(clients[a]);
+    if(clients[a]!=null){
+      callback(clients[a]);
+    }
   }
 }
 
@@ -108,6 +114,8 @@ exports.getAllStates=function(){
   }
   return statuses;
 }
-exports.removeClient=function(unique){
-  return delete clients[unique];
+exports.removeClient=function(client){
+  // clients.splice(clients.indexOf(client),1);
+  // clients[unique]=null;
+  return delete clients[client.getIndexInArray()];
 }

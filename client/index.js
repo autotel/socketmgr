@@ -15,16 +15,20 @@ document.addEventListener('DOMContentLoaded', function() {
   let wsock=new Wsock('ws://' + host + ':9966');
 
   wsock.on("message",function(message){
+    console.log(message.header+" of "+message.pointer+" is:",message.data);
 
-    console.log("incoming message",message);
+    // console.log("incoming message",message);
     if(message.header=="changeposition"){
       // message.no
       let remoteSprite=characters.remote(message.pointer);
       if(remoteSprite){
-        remoteSprite.transform.rotation(remoteSprite.transform.position(message).getMovementDirection()* 180 / Math.PI);
+        remoteSprite.transform.rotation(remoteSprite.transform.position({x:message.data[0],y:message.data[1],z:message.data[2]}).getMovementDirection()* 180 / Math.PI);
+        console.log("retrieved",remoteSprite);
       }else{
         console.warn("couldn't retrieve the corresponding sprite",message);
+        console.log(characters.chac);
       }
+      // console.log(message.data);
       // characters.each(function(ch){
       //   ch.transform.rotation(ch.transform.position(message).getMovementDirection()* 180 / Math.PI);
       // });
@@ -37,7 +41,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn("couldn't retrieve the corresponding sprite",message);
       }
     }else if(message.header=="newid"){
-      myClientId=message.data;
+      myClientId=message.pointer;
+      console.log("client id:"+myClientId);
       localSprite=new characters.Character({unique:myClientId});
       //console.log("new client Id",message);
     }else if(message.header=="allstates"){
@@ -67,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   document.addEventListener("mousemove",function(e){
-    console.log("encodedecode",({header:"changeposition",pointer:myClientId,data:[e.clientX,e.clientY,0]}));
+    // console.log("encodedecode",({header:"changeposition",pointer:myClientId,data:[e.clientX,e.clientY,0]}));
     //question: what is "the way" to error handle?
     wsock.emit({header:"changeposition",pointer:myClientId,data:[e.clientX,e.clientY,0]},function(err,pl){
       if(err){

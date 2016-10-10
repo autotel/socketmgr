@@ -4,6 +4,7 @@ var a = require('./OnHandlers');
 var characterList = [];
 //an array of the associations between server id's and client side id's
 var characterAssoc={};
+exports.chac=characterAssoc;
 //functions to access characters:
 //iterate all with callback
 exports.each = function(callback) {
@@ -22,7 +23,7 @@ exports.list = characterList;
 exports.Character = function(properties) {
   var parent = this;
   var properties = properties || {};
-  console.log("c",properties);
+  // console.log("c",properties);
   characterList.push(this);
   if(properties.hasOwnProperty("unique")){
     console.log("new character",properties);
@@ -44,7 +45,7 @@ exports.Character = function(properties) {
   var myDom = document.createElement('div');
   this.dom = myDom;
   myDom.style.cssText = 'position:absolute;width:' + props.width + 'px;height:' + props.height + 'px;opacity:1;z-index:100;background:' + props.color + ';';
-  myDom.innerHTML = '<img src="fly1.png" style="width:100%; height:100%;"/>';
+  myDom.innerHTML = '<img src="fly1.png" style="width:100%; height:100%;"/>'+properties.unique;
   //document.addEventListener('DOMContentLoaded', function() {
     document.body.appendChild(myDom);
   //}, false);

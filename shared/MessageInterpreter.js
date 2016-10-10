@@ -35,7 +35,7 @@ adn decompressing the data */
 //to get quoted array you can type jsut the chars and process it with the regex
 //[^,\n] -> "$&"
 //first header in lookup is misspelled to let know the developer that a message was not well spelled or undefined.
-let charLookup=["misspelled","newid","changeposition","newclient","allstates","remove"];
+let charLookup=["misspelled","newid","changeposition","newclient","allstates","remove","ping","pong"];
 //https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
 
 // function ab2str(buf) {
@@ -53,9 +53,10 @@ let charLookup=["misspelled","newid","changeposition","newclient","allstates","r
 
 function decode(bufferArray){
   try{
+
     let retArr={};
 
-    // let =new ArrayBuffer(20);
+    // let blankBuffer=new ArrayBuffer(20);
 
     let inComing={
       //bytes 0-3 will contain message type name
@@ -65,21 +66,28 @@ function decode(bufferArray){
       //bytes 8-19, quartets 2,3,4 will contain payload
       data:new Uint32Array(bufferArray,8)
     }
+    //some implementations of dataViews will not slice the buffer, but serve the whole in a single dataview.
+    //this solves that.
+    // if(data.length==bufferArray.length){
+    //   console.log("complete dataview");
+    // }
+    // inComing.data[0]=422;
     retArr.header=charLookup[inComing.header[0]];
-    console.log("header string of header "+inComing.header[0]+" is "+retArr.header);
+    //console.log("header string of header "+inComing.header[0]+" is "+retArr.header);
     // your browser must support for..of loop
     // and let-scoped variables in for loops
     retArr.pointer=inComing.pointer[0];
     // console.log(inComing.pointer[0]);
-    retArr.data={};
+    // var dataIterator=inComing.data.values();
+    // let a=0;
 
-    var dataIterator=inComing.data.values();
-    let a=0;
-    for (let letter of dataIterator) {
-      // console.log(letter);
-      retArr.data[a]=letter;
-      a++;
+    retArr.data={};
+    for (let a in inComing.data) {
+      retArr.data[a]=inComing.data[a];
     }
+
+    // retArr.data=Array.from(new Uint32Array(inComing.data.buffer));
+
     // retArr.data=(inComing.data.slice(8,inComing.data.length));
     // for(var a =0;a<inComing.data.length;a++){
     //   retArr.data[a]=inComing.data[a];
@@ -100,7 +108,7 @@ function decode(bufferArray){
 export {decode}
 // encode({type:"vector",pointer:32,coords
 function encode(data){
-  console.log("encode data"+data);
+  //console.log("encode data",data);
   try{
     let bufferArray=new ArrayBuffer(20);
     let outGoing={
@@ -126,7 +134,7 @@ function encode(data){
         outGoing.data[a]=data.data[a];
       }
     }else{
-      console.log("payloadless message",data);
+      //console.log("payloadless message",data);
       for(let a=0;a<outGoing.data.length;a++){
         outGoing.data[a]=0;
       }

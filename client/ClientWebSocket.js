@@ -21,24 +21,27 @@ export default class ClientWebSocket {
     let connection=this.ws;
     connection.onmessage = function (event) {
       let parsedMessage=interpreter.decode(event.data);
-      console.log("event data ",parsedMessage);
-      //question: is it secuer to json.parse server received data?
-      // console.log(interpreter.decode(event.data));
-      // try{
-      //   reader.addEventListener("loadend", function() {
-      //     console.log("reader end ",reader.result);
-      //      // reader.result contains the contents of blob as a typed array
-      //   });
-      //   // reader.readAsArrayBuffer(event.data);
-      //   reader.readAsText(event.data);
-      // }
-      // catch(error){
-      //   console.log("readerError",error);
-      // }
+      if(parsedMessage.header=="ping"){
+        parent.emit({header:"pong",pointer:0});
+      }else{
+            // console.log("event data ",parsedMessage);
+            //question: is it secuer to json.parse server received data?
+            // console.log(interpreter.decode(event.data));
+            // try{
+            //   reader.addEventListener("loadend", function() {
+            //     console.log("reader end ",reader.result);
+            //      // reader.result contains the contents of blob as a typed array
+            //   });
+            //   // reader.readAsArrayBuffer(event.data);
+            //   reader.readAsText(event.data);
+            // }
+            // catch(error){
+            //   console.log("readerError",error);
+            // }
 
 
-      parent.handle("message",parsedMessage);
-
+        parent.handle("message",parsedMessage);
+      }
       // try{
       //   let data=JSON.parse(event.data);
       //   parent.handle("message",data);
@@ -48,6 +51,7 @@ export default class ClientWebSocket {
       // }
     };
     connection.onopen = function (event) {
+      // connection.send([42,45]);
       parent.handle("connectionOpened",event);
       //parent.emit("test");
     };
@@ -59,7 +63,7 @@ export default class ClientWebSocket {
     let connection=this.ws;
     let ret={};
     let encodedMessage=interpreter.encode(payload);
-    console.log("encodedecode",interpreter.decode(encodedMessage).data);
+    // console.log("encodedecode",interpreter.decode(encodedMessage).data);
 
     try{
       connection.send(encodedMessage);
