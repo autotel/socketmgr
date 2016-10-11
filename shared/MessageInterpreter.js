@@ -35,7 +35,7 @@ adn decompressing the data */
 //to get quoted array you can type jsut the chars and process it with the regex
 //[^,\n] -> "$&"
 //first header in lookup is misspelled to let know the developer that a message was not well spelled or undefined.
-let charLookup=["misspelled","newid","changeposition","newclient","allstates","remove","ping","pong"];
+let charLookup=["misspelled","newid","changeposition","newclient","statebatch","remove","ping","pong"];
 //https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
 
 // function ab2str(buf) {
@@ -110,7 +110,11 @@ export {decode}
 function encode(data){
   //console.log("encode data",data);
   try{
-    let bufferArray=new ArrayBuffer(20);
+    let datalen=3;
+    if(data.data){
+      datalen=data.data.length;
+    }
+    let bufferArray=new ArrayBuffer(8+datalen*4);
     let outGoing={
       //bytes 0-3 will contain message type name in a representative number
       header:new Uint32Array(bufferArray,0,1),

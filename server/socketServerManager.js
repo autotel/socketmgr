@@ -34,8 +34,6 @@ export default class socketServerManager {
           thisClient.send({header:"ping"});
           thisClient.waitingPong=true;
         }
-
-
       });
     },5000);
     //pay attention that wss is the whole websocket while ws will be each socket instance
@@ -72,26 +70,9 @@ export default class socketServerManager {
       //   data: clientsMan.getAllStates()
       // });
       //pendant: this is a slower temporal replacement for allStates emission
-      clientsMan.forEach(function(thisClient){
-        console.log("sending current state of "+thisClient.unique);
-        for(let a in thisClient.currentState){
-          try{
-            console.log("->"+a+":",thisClient.currentState[a]);
-            var out={
-              header:a,
-              pointer:thisClient.unique
-            };
-            if(thisClient.currentState[a]){
-              out.data=thisClient.currentState[a];
-            }
-            client.send(out);
+      client.send(clientsMan.getAllStates());
 
-          }catch(e){
-            console.log(e);
-            console.log(thisClient.currentState);
-          }
-        }
-      });
+      //
 
       //inform all the other clients about the nuew user
       client.broadcast({

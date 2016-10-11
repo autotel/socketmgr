@@ -45,19 +45,27 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log("client id:"+myClientId);
       localSprite=new characters.Character({unique:myClientId});
       //console.log("new client Id",message);
-    }else if(message.header=="allstates"){
-
-      let state=message.data;
+    }else if(message.header=="statebatch"){
+      let batch=new Array();
+      // var numeric_array = new Array();
+      for (var items in message.data){
+          batch.push( message.data[items] );
+      }
       //for each state registry
-      for(let a in state){
+      for(let a = 0; a<batch.length; a+=4){
+        //the unique index of the object over which the data will be applied
+        let stateObjectUnique=batch[a];
         //check if we already have a sprite for this remote object
-        let dataOwner=characters.remote(state[a].pointer);
+        let dataOwner=characters.remote(stateObjectUnique);
+        let dataCoordinates={x:batch[a+1],y:batch[a+2],z:batch[a+3]};
         if(dataOwner){
+          console.log("object "+stateObjectUnique+" found apply");
           //if we have it, will apply all the data to it. So far only position
-          dataOwner.transform.position(state[a]);
+          dataOwner.transform.position(dataCoordinates);
         }else{
+          console.log("object "+stateObjectUnique+" notfound create");
           //if we don't have it, we create it.
-          let newCharacter=new characters.Character({position:{x:state[a].x,y:state[a].y},unique:state[a].pointer});
+          let newCharacter=new characters.Character({position:dataCoordinates,unique:stateObjectUnique});
           //if the character id is of my same server id, means that is the localSprite
           console.log("myclient",myClientId);
           if(message.pointer==myClientId){ localSprite=newCharacter; }

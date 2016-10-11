@@ -12,7 +12,7 @@ export default class ClientWebSocket {
   init (address){
     let parent=this;
     //onHandlers.call(this);
-    //pendant:make communication binary
+
     this.ws = new WebSocket(address);
 
     this.ws.binaryType='arraybuffer';//i actually would like to communicate by using arraybuffer
@@ -56,9 +56,6 @@ export default class ClientWebSocket {
       //parent.emit("test");
     };
   }
-  //pendant: this shoukld make thne work of encomdonf into binary, as shor as possible payloads aswell.
-  //dont use json, too long.
-
   emit(payload,then){
     let connection=this.ws;
     let ret={};

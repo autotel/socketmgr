@@ -108,11 +108,43 @@ exports.forEach=function(callback){
 }
 
 exports.getAllStates=function(){
-  var statuses={};
-  for(var a in clients){
-    statuses[a]=clients[a].currentState;
-  }
-  return statuses;
+
+  let outGoing={header:"statebatch",pointer:0,data:[]};
+  exports.forEach(function(thisClient){
+    if(thisClient.currentState.changeposition){
+      outGoing.data.push(thisClient.unique);
+      for (let a in thisClient.currentState.changeposition){
+        outGoing.data.push(thisClient.currentState.changeposition[a]);
+      }
+    }
+    // console.log("sending current state of "+thisClient.unique);
+    //generic approach:
+    // for(let a in thisClient.currentState){
+    //   try{
+    //     console.log("->"+a+":",thisClient.currentState[a]);
+    //     var out={
+    //       header:a,
+    //       pointer:thisClient.unique
+    //     };
+    //     if(thisClient.currentState[a]){
+    //       out.data=thisClient.currentState[a];
+    //     }
+    //     client.send(out);
+    //
+    //   }catch(e){
+    //     console.log(e);
+    //     console.log(thisClient.currentState);
+    //   }
+    // }
+  });
+  console.log(outGoing);
+  return outGoing;
+  //json connection approach
+  // var statuses={};
+  // for(var a in clients){
+  //   statuses[a]=clients[a].currentState;
+  // }
+  // return statuses;
 }
 exports.removeClient=function(client){
   // clients.splice(clients.indexOf(client),1);
