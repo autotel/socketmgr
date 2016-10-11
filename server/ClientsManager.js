@@ -7,12 +7,10 @@ of all the other clients that are connected to the server, and to attach the fun
 to a client class, so we become able to call functions such as clientsManager.broadcast
 and client.send.
 */
-//pendant: I really don't like requiring interpreter in the clientsmanager and
-// socketservermanager. Neither to pas ws to the client. I would like to somehow
-//put all the communication stuff in a single file. Maybe create a postMan
+
 
 let eemiter=require('../shared/OnHandlers');
-let interpreter=require('../shared/MessageInterpreter');
+// let interpreter=require('../shared/MessageInterpreter');
 
 export function ClientsManager(){
   let clients={};
@@ -42,7 +40,7 @@ export function ClientsManager(){
         e.client.waitingPong=false;
       };
     });
-    //timer for keepalive pendant: should be inside thisClientsManager
+    //timer for keepalive
     let pingPongTimer=setInterval(function(){
       thisClientsManager.forEach(function(thisClient){
         if(thisClient.waitingPong){
@@ -85,7 +83,8 @@ export function ClientsManager(){
     this.getIndexInArray=function(){
       return this.unique;
     }
-
+    //pendant: client is holding a socketServerInstance under the ws variable,
+    //this is misleading to programmers and the ws var should be renamed
     this.ws.on('message', function(event) {
       // console.log("client received msg"+msg);
       if(event.parsedMessage){
@@ -115,7 +114,6 @@ export function ClientsManager(){
         var d = true;
         if (except) {
           if (client.unique == except) {
-            //pendant: it has not been tested that this continue will effectively jump over this send.
             d = false;
           }
         }
@@ -149,18 +147,7 @@ export function ClientsManager(){
     }
     // return this;
   }
-  //when a client emits data, you want to register it, so the registry will contain
-  //the latest state of each client
-  //pendant: should be renamed to trackChangeOf. is a trackChange with a search function
-  // this.clientEmitted=function(uniqueToGet,data){
-  //   //update the client's current state from the data
-  //   //it overwrites data with the same name, which gives sense to keeping track
-  //   if(clients[uniqueToGet]){
-  //     clients[uniqueToGet].trackChange(data);
-  //   }else{
-  //     console.warn("ClientRegistry at clientEmitted(): tried to access clients["+uniqueToGet+"], which does not exist");
-  //   }
-  // }
+
   this.forEach=function(callback){
     for(var a in clients){
       if(clients[a]!=null){

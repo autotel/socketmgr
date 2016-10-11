@@ -36,6 +36,7 @@ exports.onHandlers=function(){
     if(eventVerbose) console.log("Event "+fname+":",{caller:this,params:params});
     if (this.ons[fname]) {
       for (var n in this.ons[fname]) {
+        //pendant: how to make a better error handling? otherwise the function is bubbling the error to the handle() caller!!
         try{
           // console.log(this.ons[fname][n][1]);
           this.ons[fname][n][1](params);
