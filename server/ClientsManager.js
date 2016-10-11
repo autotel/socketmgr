@@ -7,147 +7,183 @@ of all the other clients that are connected to the server, and to attach the fun
 to a client class, so we become able to call functions such as clientsManager.broadcast
 and client.send.
 */
-var clients={};
-//uncomment to have access to the client list.
-//should not be a problem as long as iandexes are not altered. Or maybe even if so
-// exports.clients=clients;
-var nextClientId=0;
-//question: is this ok?
-var thisClientsManager=exports;
-var nextClientIdSearch=function(startingFrom){
-  //you can either try to be economic with the client id, or just allocate one entry per connection
-/*  var currentClientN=startingFrom;
-  while(clients[currentClientN]){
-    currentClientN++;
-  }
-  return currentClientN;*/
-  nextClientId++;
-  return nextClientId;
-}
-//new Client ID creates a space for a new client.
-//custom data can be provided, such as the websocket handle
-exports.Client=function(append){
-  var append=append||{};
-  var thisClient=this;
-  //question: if timestamp is provided in append parameter, it will get overwritten. Is that ok?
-  this.timestamp={created:Date.now()};
-  this.currentState={};
+//pendant: I really don't like requiring interpreter in the clientsmanager and
+// socketservermanager. Neither to pas ws to the client. I would like to somehow
+//put all the communication stuff in a single file. Maybe create a postMan
 
-  for(var a in append){
-    this[a]=append[a];
+let eemiter=require('../shared/OnHandlers');
+let interpreter=require('../shared/MessageInterpreter');
+
+export function ClientsManager(){
+  let clients={};
+  //uncomment to have access to the client list.
+  //should not be a problem as long as iandexes are not altered. Or maybe even if so
+  // this.clients=clients;
+  let nextClientId=0;
+  //question: is this ok?
+  eemiter.onHandlers.call(this);
+  let thisClientsManager=this;
+  let nextClientIdSearch=function(startingFrom){
+    //you can either try to be economic with the client id, or just allocate one entry per connection
+  /*  var currentClientN=startingFrom;
+    while(clients[currentClientN]){
+      currentClientN++;
+    }
+    return currentClientN;*/
+    nextClientId++;
+    return nextClientId;
   }
 
-  //get a new id for distinction among clients on communications
-  this.unique=nextClientIdSearch();
-  //add this element to a ClientsManager global array;
-  clients[this.unique]=this;
-  this.getIndexInArray=function(){
-    return this.unique;
-  }
-  //some functions to this client
-  this.broadcast=function(data) {
-    console.log("broadcast->");
-    //execute send to all the clients exept this client
-    var except=thisClient.unique;
-    thisClientsManager.forEach(function(client) {
-      console.log(" iterate client"+client.unique);
-      var d = true;
-      if (except) {
-        if (client.unique == except) {
-          //pendant: it has not been tested that this continue will effectively jump over this send.
-          d = false;
+  this.setKeepaliveTimer=function(time){
+    thisClientsManager.on('clientMessage',function(e){
+      if(e.parsedMessage)
+      if(e.parsedMessage.header=="pong"){
+        //The client has answered a ping message, and will not be removed on next ping timer.
+        e.client.waitingPong=false;
+      };
+    });
+    //timer for keepalive pendant: should be inside thisClientsManager
+    let pingPongTimer=setInterval(function(){
+      thisClientsManager.forEach(function(thisClient){
+        if(thisClient.waitingPong){
+          thisClientsManager.removeClient(thisClient);
+          console.log('stopping client '+thisClient.unique+" from ping-pong death");
+          thisClient.broadcast({
+            header: "remove",
+            pointer: thisClient.unique
+          });
+        }else{
+          console.log("iter"+thisClient.unique);
+          thisClient.send({header:"ping"});
+          thisClient.waitingPong=true;
         }
+      });
+    },time);
+  }
+
+  //new Client ID creates a space for a new client.
+  //custom data can be provided, such as the websocket handle
+  this.Client=function(append){
+    eemiter.onHandlers.call(this);
+    var append=append||{};
+    var thisClient=this;
+    //question: if timestamp is provided in append parameter, it will get overwritten. Is that ok?
+    this.timestamp={created:Date.now()};
+    this.currentState={};
+
+    if(!append.ws){
+      console.warn("you need to provide every client with a ws instance on creation. Otherwise they will make erros on each send");
+    }
+    for(var a in append){
+      this[a]=append[a];
+    }
+
+    //get a new id for distinction among clients on communications
+    this.unique=nextClientIdSearch();
+    //add this element to a ClientsManager global array;
+    clients[this.unique]=this;
+    this.getIndexInArray=function(){
+      return this.unique;
+    }
+
+    this.ws.on('message', function(event) {
+      // console.log("client received msg"+msg);
+      if(event.parsedMessage){
+        //track changes and broadcast the ones that need
+        thisClient.trackChange(event.parsedMessage);
+        if(event.parsedMessage.header=="changeposition"){
+          console.log("position",event.parsedMessage);
+          thisClient.broadcast(event.rawMessage);
+        }
+        event.client=thisClient;
+        thisClient.handle('message',event);
+        thisClientsManager.handle('clientMessage',event);
       }
-      //ws was provided on connection event to each new client listing
-      if (d) {
-        try {
-          client.send(data);
-          console.log("client "+client.unique+" sent");
-        } catch (e) {
-          console.warn("object " + client.unique + " missed some data", data);
-          console.warn(e);
+      // console.log(msg);
+    });
+
+    this.send=function(data){
+      this.ws.send(data);
+    }
+    //some functions to this client
+    this.broadcast=function(data) {
+      console.log("broadcast->");
+      //execute send to all the clients exept this client
+      var except=thisClient.unique;
+      thisClientsManager.forEach(function(client) {
+        console.log(" iterate client"+client.unique);
+        var d = true;
+        if (except) {
+          if (client.unique == except) {
+            //pendant: it has not been tested that this continue will effectively jump over this send.
+            d = false;
+          }
+        }
+        //ws was provided on connection event to each new client listing
+        if (d) {
+          try {
+            client.send(data);
+            console.log("client "+client.unique+" sent");
+          } catch (e) {
+            console.warn("object " + client.unique + " missed some data", data);
+            console.warn(e);
+          }
+        }
+      });
+    };
+
+
+
+    console.log("kk"+this.unique);
+    this.id=this.unique;
+
+    //keeps the record for current client's state, so we can make aware new clients
+    //about the state of each other client
+    this.trackChange=function(data){
+      console.log(data.header+" of "+this.unique+" is "+data.data||false);
+      this.currentState[data.header]=data.data||false;
+      // for(var a in data){
+      //   this.currentState[a]=data[a];
+      // }
+      this.timestamp.lastEmit=Date.now();
+    }
+    // return this;
+  }
+  //when a client emits data, you want to register it, so the registry will contain
+  //the latest state of each client
+  //pendant: should be renamed to trackChangeOf. is a trackChange with a search function
+  // this.clientEmitted=function(uniqueToGet,data){
+  //   //update the client's current state from the data
+  //   //it overwrites data with the same name, which gives sense to keeping track
+  //   if(clients[uniqueToGet]){
+  //     clients[uniqueToGet].trackChange(data);
+  //   }else{
+  //     console.warn("ClientRegistry at clientEmitted(): tried to access clients["+uniqueToGet+"], which does not exist");
+  //   }
+  // }
+  this.forEach=function(callback){
+    for(var a in clients){
+      if(clients[a]!=null){
+        callback(clients[a]);
+      }
+    }
+  }
+
+  this.getAllStates=function(){
+
+    let outGoing={header:"statebatch",pointer:0,data:[]};
+    this.forEach(function(thisClient){
+      if(thisClient.currentState.changeposition){
+        outGoing.data.push(thisClient.unique);
+        for (let a in thisClient.currentState.changeposition){
+          outGoing.data.push(thisClient.currentState.changeposition[a]);
         }
       }
     });
-  };
-
-
-
-  console.log("kk"+this.unique);
-  this.id=this.unique;
-
-  //keeps the record for current client's state, so each new client gets the older ones.
-  this.trackChange=function(data){
-    console.log(data.header+" of "+this.unique+" is "+data.data||false);
-    this.currentState[data.header]=data.data||false;
-    // for(var a in data){
-    //   this.currentState[a]=data[a];
-    // }
-    this.timestamp.lastEmit=Date.now();
+    console.log(outGoing);
+    return outGoing;
   }
-  // return this;
-}
-//when a client emits data, you want to register it, so the registry will contain
-//the latest state of each client
-//pendant: should be renamed to trackChangeOf. is a trackChange with a search function
-exports.clientEmitted=function(uniqueToGet,data){
-  //update the client's current state from the data
-  //it overwrites data with the same name, which gives sense to keeping track
-  if(clients[uniqueToGet]){
-    clients[uniqueToGet].trackChange(data);
-  }else{
-    console.warn("ClientRegistry at clientEmitted(): tried to access clients["+uniqueToGet+"], which does not exist");
+  this.removeClient=function(client){
+    return delete clients[client.getIndexInArray()];
   }
-}
-exports.forEach=function(callback){
-  for(var a in clients){
-    if(clients[a]!=null){
-      callback(clients[a]);
-    }
-  }
-}
-
-exports.getAllStates=function(){
-
-  let outGoing={header:"statebatch",pointer:0,data:[]};
-  exports.forEach(function(thisClient){
-    if(thisClient.currentState.changeposition){
-      outGoing.data.push(thisClient.unique);
-      for (let a in thisClient.currentState.changeposition){
-        outGoing.data.push(thisClient.currentState.changeposition[a]);
-      }
-    }
-    // console.log("sending current state of "+thisClient.unique);
-    //generic approach:
-    // for(let a in thisClient.currentState){
-    //   try{
-    //     console.log("->"+a+":",thisClient.currentState[a]);
-    //     var out={
-    //       header:a,
-    //       pointer:thisClient.unique
-    //     };
-    //     if(thisClient.currentState[a]){
-    //       out.data=thisClient.currentState[a];
-    //     }
-    //     client.send(out);
-    //
-    //   }catch(e){
-    //     console.log(e);
-    //     console.log(thisClient.currentState);
-    //   }
-    // }
-  });
-  console.log(outGoing);
-  return outGoing;
-  //json connection approach
-  // var statuses={};
-  // for(var a in clients){
-  //   statuses[a]=clients[a].currentState;
-  // }
-  // return statuses;
-}
-exports.removeClient=function(client){
-  // clients.splice(clients.indexOf(client),1);
-  // clients[unique]=null;
-  return delete clients[client.getIndexInArray()];
 }

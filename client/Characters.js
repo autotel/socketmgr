@@ -1,5 +1,5 @@
 // question: this line is repeated in ClientWebSocket. Should it be a global instead?
-var a = require('./OnHandlers');
+var a = require('../shared/OnHandlers');
 //an array of the displayable characters for client side reference
 var characterList = [];
 //an array of the associations between server id's and client side id's
@@ -85,7 +85,8 @@ exports.Character = function(properties) {
     getRelativeMovement: function() {
       return ({
         x: this.prevCoords.x - this.newCoords.x,
-        y: this.prevCoords.y - this.newCoords.y
+        y: this.prevCoords.y - this.newCoords.y,
+        z: this.prevCoords.z - this.newCoords.z
       });
     },
   }

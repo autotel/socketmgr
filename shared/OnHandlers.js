@@ -36,8 +36,12 @@ exports.onHandlers=function(){
     if(eventVerbose) console.log("Event "+fname+":",{caller:this,params:params});
     if (this.ons[fname]) {
       for (var n in this.ons[fname]) {
-        // console.log(this.ons[fname][n][1]);
-        this.ons[fname][n][1](params);
+        try{
+          // console.log(this.ons[fname][n][1]);
+          this.ons[fname][n][1](params);
+        }catch(e){
+          console.log("onHandler: error with "+fname+" callback:",e);
+        }
       }
     }
   }

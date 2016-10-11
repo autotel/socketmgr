@@ -1,4 +1,4 @@
-let a=require('./OnHandlers');
+let a=require('../shared/OnHandlers');
 let interpreter=require('../shared/MessageInterpreter');
 export default class ClientWebSocket {
   constructor(address){
